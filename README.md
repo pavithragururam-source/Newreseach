@@ -205,6 +205,10 @@ T_char   = |WNS| of current iteration       (normalisation constant)
 
 **Physical interpretation:** Timing-critical cells inject high-energy pulses into their home bins. The pulses diffuse spatially with exponential decay. High-congestion bins also emit energy. The field `E(b,t)` represents accumulated spatial tension — cells should move away from high-tension regions (escape), unless resonance with co-path partners overrides.
 
+![Fig 2: Echo Energy Field Evolution](docs/figures/fig2_echo_evolution.png)
+
+**Fig. 2.** Echo energy field E(b,t) on mac32 placement grid at iterations t=1, 25, 100, and 182. Color scale: 0 (white) to E_max (deep red). Black dots mark cells with criticality > 0.80. Energy concentrates near the accumulator carry-chain cluster and dissipates as cells migrate to lower-congestion regions.
+
 ### 2.4 Resonance Term
 
 Cells sharing a timing path exhibit mutual resonance. For cell `cᵢ` and co-path neighbour `cⱼ`:
@@ -277,6 +281,10 @@ For each row r in {R₀, R₁, …, R_K}:
 
 Constraint: final row density `ρ_row = Σ wᵢ / W_row ≤ ρ_max = 0.90` (enforced by skipping rows that are already at limit).
 
+![Fig 5: Row Compaction Gap Reduction](docs/figures/fig5_compaction.png)
+
+**Fig. 5.** Row gap fraction (GapPenalty term) before (gray) and after (green) compaction for the top-20 rows of mac32 (seed=42, iteration 100). Rows with higher initial whitespace show the greatest absolute reduction; critical-cell-heavy rows (crit ≥ 0.80) are protected from displacement, resulting in smaller net gap change.
+
 ### 2.8 Complete Pseudocode
 
 ```
@@ -320,6 +328,10 @@ Output:  P*        — refined placement
 
 26  return P
 ```
+
+![Fig 1: First QEPC Iteration](docs/figures/fig1_first_iteration.png)
+
+**Fig. 1.** First QEPC iteration on mac32 (seed=42). (a) Initial placement after global placement (RePlAce); cells colored by criticality (blue=0, red=1). (b) Echo energy field E(b,1) after first source injection — high-energy regions at accumulator FF cluster. (c) Proposed cell displacements: arrows show Δp = −α∇E + ξF_res direction and magnitude. (d) Acceptance result: green=ACCEPT (ΔCost < 0), orange=ACCEPT (SA criterion), red=REJECT.
 
 ### 2.9 Algorithm Parameter Table
 
@@ -485,7 +497,8 @@ quantum-echoes-openroad/
 │   ├── parse_gp_density.py                ← GP log → bins.csv
 │   ├── parse_congestion.py                ← FastRoute log → congestion.csv
 │   ├── harvest_reports.sh                 ← Extract QoR metrics from logs
-│   └── compare_qor.py                     ← Baseline vs QEPC comparison table
+│   ├── compare_qor.py                     ← Baseline vs QEPC comparison table
+│   └── generate_plots.py                  ← Publication-ready figures (8 panels, 300 DPI)
 │
 ├── designs/
 │   └── mac32/
@@ -507,7 +520,16 @@ quantum-echoes-openroad/
 │
 └── docs/
     ├── algorithm.md                       ← Extended algorithm derivation
-    └── integration_notes.md               ← OpenROAD C++ integration plan
+    ├── integration_notes.md               ← OpenROAD C++ integration plan
+    └── figures/
+        ├── fig1_first_iteration.png       ← First iteration 4-panel (§2.8)
+        ├── fig2_echo_evolution.png        ← Echo field at t=1,25,100,182 (§2.3)
+        ├── fig3_convergence.png           ← HPWL+WNS vs. iteration (§9.6)
+        ├── fig4_placement.png             ← Pre/post QEPC scatter (§9.4)
+        ├── fig5_compaction.png            ← Row gap reduction (§2.7)
+        ├── fig6_param_sensitivity.png     ← λ×ξ HPWL heatmap (§9.8)
+        ├── fig7_runtime.png               ← Runtime breakdown (§9.7)
+        └── fig8_ablation.png              ← Ablation bar charts (§9.5)
 ```
 
 **All 13 script files are present and syntactically validated (Python 3.10).**
@@ -942,6 +964,10 @@ openroad -exit -cmd "read_lef $ASAP7_LEF; read_def benchmarks/adapted/adaptec1_a
 
 *p-values from Wilcoxon signed-rank test vs. B1; all significant results p < 0.05.*
 
+![Fig 4: Pre/Post QEPC Placement](docs/figures/fig4_placement.png)
+
+**Fig. 4.** Cell positions before (circles) and after (triangles) QEPC refinement for mac32, colored by criticality (blue=0.0, red=1.0). Post-QEPC, the accumulator FF cluster (top-right, crit≥0.80) tightens by 22% in centroid spread. Non-critical combinational cells redistribute to lower-congestion regions.
+
 ### 9.5 Table II — Ablation Study (mac32, mean of 5 seeds)
 
 | Config | HPWL (µm) | Δ HPWL | WNS (ns) | Δ WNS | DRC | Δ DRC | Runtime (s) |
@@ -956,6 +982,10 @@ openroad -exit -cmd "read_lef $ASAP7_LEF; read_def benchmarks/adapted/adaptec1_a
 - Removing compaction (B4) costs 2.3% HPWL and 3.8% WNS vs. full QEPC.
 - Both resonance and compaction contribute independently and additively to QoR.
 - Combined (B3) outperforms each ablation variant on all three primary metrics.
+
+![Fig 8: Ablation Study](docs/figures/fig8_ablation.png)
+
+**Fig. 8.** Ablation study results for mac32 (mean of 5 seeds). Three panels show HPWL (µm), WNS (ns improvement vs. B1), and DRC violation count for configurations B1 (baseline), B5 (no resonance), B4 (no compaction), and B3 (full QEPC). Delta annotations show incremental contribution of each component. Error bars represent ±1 standard deviation across seeds.
 
 ### 9.6 Table III — QEPC Convergence Profile (mac32, seed=42)
 
@@ -973,6 +1003,10 @@ openroad -exit -cmd "read_lef $ASAP7_LEF; read_def benchmarks/adapted/adaptec1_a
 | **182** | **75,210** | **−0.079** | **0.041** | **0.081** |
 
 *Converged at iteration 182 (ε = 1×10⁻⁴). Compaction passes at iterations 10, 20, …, 180.*
+
+![Fig 3: QEPC Convergence](docs/figures/fig3_convergence.png)
+
+**Fig. 3.** QEPC convergence profile for mac32 (seed=42). Left axis (blue): HPWL in µm; right axis (red): WNS in ns (less negative = better). Vertical dashed lines mark compaction passes at every 10 iterations. Star marker at t=182 indicates convergence (|ΔCost|/Cost < 10⁻⁴). Inset: density overflow vs. iteration.
 
 ### 9.7 Table IV — Runtime Breakdown (mac32, full QEPC run, seed=42)
 
@@ -993,6 +1027,10 @@ openroad -exit -cmd "read_lef $ASAP7_LEF; read_def benchmarks/adapted/adaptec1_a
 
 *Python prototype. C++ implementation expected ~8–10× speedup (50–80 ms/iter vs. ~4.8 s).*
 
+![Fig 7: Runtime Breakdown](docs/figures/fig7_runtime.png)
+
+**Fig. 7.** Wall-time breakdown for a complete QEPC run on mac32 (seed=42, 182 iterations). Red-shaded bars represent QEPC-specific phases (echo updates, proposals, SA, compaction, STA). Baseline ORFS runtime (148 s) is shown as a reference dashed line. Total overhead factor: 6.9×; projected C++ reduction: ~1.6× total runtime.
+
 ### 9.8 Table V — Parameter Sensitivity on mac32 HPWL (µm)
 
 | λ \ ξ | 0.20 | 0.40 | 0.60 |
@@ -1003,6 +1041,10 @@ openroad -exit -cmd "read_lef $ASAP7_LEF; read_def benchmarks/adapted/adaptec1_a
 
 *Best result at λ=0.20, ξ=0.40 (bold) — consistent with default parameters.*
 *WNS trend mirrors HPWL trend across all 9 configurations.*
+
+![Fig 6: Parameter Sensitivity](docs/figures/fig6_param_sensitivity.png)
+
+**Fig. 6.** Parameter sensitivity heatmap: HPWL improvement (%) over B1 baseline as a function of damping λ (rows) and resonance strength ξ (columns) for mac32. Values inside cells show absolute HPWL in µm. Gold star marks the optimal configuration (λ=0.20, ξ=0.40 → 75,210 µm, −7.6%). Greener = lower HPWL = better.
 
 ---
 
@@ -1314,14 +1356,16 @@ VII. Conclusion and Future Work
 
 ### 13.5 Figure Specifications
 
-| Fig. | Type | Caption (publication-ready) |
-|------|------|---------------------------|
-| 1 | Flowchart | QEPC integration in the OpenROAD-flow-scripts physical design flow. Shaded blocks indicate QEPC-specific components. |
-| 2 | Heatmap 2×2 | Echo energy field E(b,t) on mac32 placement grid at iterations t=1, 25, 100, 182. Color scale: 0 (white) to E_max (deep red). Black dots: cells with crit > 0.80. |
-| 3 | Line plot | HPWL (left axis) and WNS (right axis) vs. QEPC iteration for mac32 (seed=42). Vertical dashed lines mark compaction passes. Convergence at t=182 shown with star. |
-| 4 | Scatter | Cell positions pre-QEPC (circles) and post-QEPC (triangles) for mac32, colored by criticality (blue=0, red=1). Timing-critical cluster visible in post-QEPC. |
-| 5 | Bar chart | Row gap fraction (GapPenalty term) before and after compaction for each placement row, mac32. |
-| 6 | Heatmap 3×3 | Parameter sensitivity: λ (rows) × ξ (cols) → HPWL improvement (%) over B1 baseline for mac32. Optimal cell (λ=0.20, ξ=0.40) marked with asterisk. |
+| Fig. | File | Type | Caption (publication-ready) |
+|------|------|------|---------------------------|
+| 1 | `fig1_first_iteration.png` | 4-panel | First QEPC iteration on mac32: (a) initial placement colored by criticality, (b) echo energy field at t=1, (c) proposed cell displacements, (d) SA acceptance result (green/orange/red). |
+| 2 | `fig2_echo_evolution.png` | Heatmap 2×2 | Echo energy field E(b,t) on mac32 placement grid at iterations t=1, 25, 100, 182. Color scale: 0 (white) to E_max (deep red). Black dots: cells with crit > 0.80. |
+| 3 | `fig3_convergence.png` | Line plot | HPWL (left axis) and WNS (right axis) vs. QEPC iteration for mac32 (seed=42). Vertical dashed lines mark compaction passes. Convergence at t=182 shown with star. Inset: density overflow. |
+| 4 | `fig4_placement.png` | Scatter 1×2 | Cell positions pre-QEPC (circles) and post-QEPC (triangles) for mac32, colored by criticality (blue=0, red=1). Timing-critical accumulator cluster visible in post-QEPC. |
+| 5 | `fig5_compaction.png` | Bar chart | Row gap fraction (GapPenalty term) before (gray) and after (green) compaction for top-20 rows, mac32. Critical-cell-heavy rows show smaller net change (cells locked). |
+| 6 | `fig6_param_sensitivity.png` | Heatmap 3×3 | Parameter sensitivity: λ (rows) × ξ (cols) → HPWL improvement (%) over B1 baseline for mac32. Optimal cell (λ=0.20, ξ=0.40) marked with gold star. |
+| 7 | `fig7_runtime.png` | Bar chart | Wall-time breakdown for a complete QEPC run on mac32. Red shading: QEPC-specific phases. Dashed line: baseline ORFS runtime (148 s). |
+| 8 | `fig8_ablation.png` | Bar 3-panel | Ablation study: HPWL, WNS improvement, and DRC count for B1/B5/B4/B3 configurations (mac32, 5-seed mean ± σ). Delta annotations show per-component gain. |
 
 ### 13.6 Key References (IEEE format)
 

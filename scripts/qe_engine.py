@@ -80,7 +80,7 @@ class QEEngine:
             return 0.0, 0.0
         row = row.iloc[0]
         fx = fy = 0.0
-        sig2 = 50.0 ** 2
+        sig2 = 5000.0 ** 2   # σ_r = 5000 DBU = 5 µm (resonance radius)
         for cells_list in self._path_cells.values():
             if name not in cells_list:
                 continue

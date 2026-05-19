@@ -1,0 +1,10 @@
+scripts/__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+results/qepc/*.rpt
+results/qepc/*.def
+results/qepc/*.odb
+results/qepc/*.csv
+results/baseline/
+/tmp/
